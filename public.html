@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MatchIQ – Today's football matches, goals and score predictions</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f4f7;--card:#fff;--ink:#14213d;--mute:#5b6679;--line:#d9dee7;--hi:#ffd60a;--hiink:#14213d;--bar:#14213d;--ad:#e8ebf1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1523;--card:#172036;--ink:#eef1f7;--mute:#9aa6bd;--line:#2a3652;--bar:#ffd60a;--ad:#1d2840}}
+:root[data-theme="dark"]{--bg:#0e1523;--card:#172036;--ink:#eef1f7;--mute:#9aa6bd;--line:#2a3652;--bar:#ffd60a;--ad:#1d2840}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Barlow,system-ui,sans-serif}
+main{max-width:640px;margin:auto;padding:18px 16px 48px}
+h1,h2,.num{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:800;letter-spacing:.01em;margin:0}
+.top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.logo{font-size:30px}.logo b{background:var(--hi);color:var(--hiink);padding:0 6px;border-radius:4px}
+.date{color:var(--mute);font-size:14px}
+.lede{color:var(--mute);margin:2px 0 16px}
+.ad{background:var(--ad);border:1px dashed var(--line);border-radius:8px;color:var(--mute);font-size:12px;text-align:center;display:grid;place-items:center;margin:14px 0;min-height:90px}
+.row{display:grid;grid-template-columns:54px 1fr auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;text-decoration:none;color:inherit}
+.row:hover,.row:focus-visible{border-color:var(--ink);outline:none}
+.t{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:20px}
+.teams{font-weight:600}.comp{color:var(--mute);font-size:13px;font-weight:400}
+.chip{font-size:13px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--hi);color:var(--hiink);white-space:nowrap}
+.back{display:inline-block;margin-bottom:12px;color:var(--mute);text-decoration:none;font-size:14px}
+.score{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;text-align:center}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.vs h2{font-size:26px;line-height:1.1}.vs span{color:var(--mute);font-weight:600}
+.pred{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.pred .num{font-size:64px;line-height:1}
+.pred small{display:block;color:var(--mute)}
+h3{font-family:"Barlow Condensed",sans-serif;font-size:22px;margin:22px 0 8px}
+.bar{display:flex;height:34px;border-radius:6px;overflow:hidden;font-weight:600;font-size:14px}
+.bar div{display:grid;place-items:center;min-width:0}
+.b1{background:var(--bar);color:var(--bg)}.bx{background:var(--line);color:var(--ink)}.b2{background:var(--hi);color:var(--hiink)}
+.bl{display:flex;justify-content:space-between;color:var(--mute);font-size:13px;margin-top:4px}
+.tbl{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tbl td{padding:9px 14px;border-bottom:1px solid var(--line)}.tbl tr:last-child td{border:0}.tbl td:last-child{text-align:right;font-weight:600}
+.facts{margin:0;padding-left:18px}.facts li{margin-bottom:6px}
+.share{display:flex;gap:10px;margin-top:18px}
+.btn{flex:1;text-align:center;padding:12px;border-radius:10px;font-weight:600;text-decoration:none;border:1px solid var(--ink);color:var(--ink);background:transparent;font:inherit;font-weight:600;cursor:pointer}
+.btn.wa{background:#25d366;border-color:#25d366;color:#08210f}
+.note{color:var(--mute);font-size:12px;margin-top:22px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><div class="logo num">Match<b>IQ</b></div><div class="date" id="today"></div></div>
+<p class="lede">Today's matches with goal probabilities and a score pick. No sign-up.</p>
+
+<section id="list">
+  <div class="ad">Ad slot · top banner</div>
+  <div id="rows"></div>
+  <div class="ad">Ad slot · mid-page</div>
+</section>
+
+<section id="match" class="hidden"></section>
+
+<p class="note">Probabilities come from a simple goals model, not inside information. Football is unpredictable. 18+ only; gamble responsibly.</p>
+</main>
+<script>
+
+var LG=1.35;
+var FIX=[];
+function fact(n){var f=1;for(var i=2;i<=n;i++)f*=i;return f}
+function pois(l,k){return Math.exp(-l)*Math.pow(l,k)/fact(k)}
+function model(m){
+  var lh=m.hF*m.aA/LG*1.1, la=m.aF*m.hA/LG*0.92, N=9;
+  var w=0,d=0,l=0,o15=0,o25=0,o35=0,btts=0,best={p:0,h:0,a:0};
+  for(var i=0;i<N;i++)for(var j=0;j<N;j++){
+    var p=pois(lh,i)*pois(la,j);
+    if(i>j)w+=p;else if(i==j)d+=p;else l+=p;
+    if(i+j>1)o15+=p;if(i+j>2)o25+=p;if(i+j>3)o35+=p;
+    if(i>0&&j>0)btts+=p;
+    if(p>best.p)best={p:p,h:i,a:j};
+  }
+  var s=w+d+l;
+  return {lh:lh,la:la,w:w/s,d:d/s,l:l/s,o15:o15/s,o25:o25/s,o35:o35/s,btts:btts/s,best:best};
+}
+function pc(x){return Math.round(x*100)}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+var now=new Date();
+document.getElementById("today").textContent=now.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"});
+
+function renderList(){
+  document.getElementById("rows").innerHTML=FIX.map(function(m){
+    var r=model(m);
+    return '<a class="row" href="#'+m.id+'"><span class="t">'+m.time+'</span><span class="teams">'+esc(m.h)+' v '+esc(m.a)+'<br><span class="comp">'+esc(m.comp)+'</span></span><span class="chip">Over 2.5: '+pc(r.o25)+'%</span></a>';
+  }).join("");
+}
+
+function renderMatch(m){
+  var r=model(m), url=location.href, txt=m.h+" v "+m.a+": MatchIQ score pick "+r.best.h+"-"+r.best.a+", Over 2.5 goals "+pc(r.o25)+"%. "+url;
+  var fav=r.w>r.l?m.h:m.a, favp=Math.max(r.w,r.l);
+  var facts=[
+    m.h+" score "+m.hF.toFixed(2)+" and concede "+m.hA.toFixed(2)+" per game this season. "+m.a+": "+m.aF.toFixed(2)+" scored, "+m.aA.toFixed(2)+" conceded.",
+    "Expected goals in this match: "+r.lh.toFixed(2)+" for "+m.h+", "+r.la.toFixed(2)+" for "+m.a+"."
+  ];
+  document.getElementById("match").innerHTML=
+   '<a class="back" href="#">← All matches</a>'+
+   '<div class="score"><div class="vs"><h2>'+esc(m.h)+'</h2><span>v</span><h2>'+esc(m.a)+'</h2></div>'+
+   '<div class="comp">'+esc(m.comp)+' · Kick-off '+m.time+'</div>'+
+   '<div class="pred"><small>Most likely score</small><div class="num">'+r.best.h+' – '+r.best.a+'</div><small>Only about '+pc(r.best.p)+'% likely. Single scorelines are always long shots.</small></div></div>'+
+   '<div class="ad">Ad slot · under prediction</div>'+
+   '<h3>Who wins</h3>'+
+   '<div class="bar"><div class="b1" style="width:'+pc(r.w)+'%">'+pc(r.w)+'%</div><div class="bx" style="width:'+pc(r.d)+'%">'+pc(r.d)+'%</div><div class="b2" style="width:'+pc(r.l)+'%">'+pc(r.l)+'%</div></div>'+
+   '<div class="bl"><span>'+esc(m.h)+'</span><span>Draw</span><span>'+esc(m.a)+'</span></div>'+
+   '<h3>Goals</h3>'+
+   '<table class="tbl"><tr><td>Over 1.5 goals</td><td>'+pc(r.o15)+'%</td></tr><tr><td>Over 2.5 goals</td><td>'+pc(r.o25)+'%</td></tr><tr><td>Over 3.5 goals</td><td>'+pc(r.o35)+'%</td></tr><tr><td>Both teams to score</td><td>'+pc(r.btts)+'%</td></tr></table>'+
+   '<h3>Why</h3><ul class="facts">'+facts.map(function(f){return '<li>'+esc(f)+'</li>'}).join("")+'</ul>'+
+   '<div class="ad">Ad slot · sponsored / affiliate</div>'+
+   '<div class="share"><a class="btn wa" href="https://wa.me/?text='+encodeURIComponent(txt)+'" target="_blank" rel="noopener">Share on WhatsApp</a><button class="btn" id="cp">Copy link</button></div>';
+  var cp=document.getElementById("cp");
+  cp.onclick=function(){try{navigator.clipboard.writeText(url);cp.textContent="Copied"}catch(e){cp.textContent="Copy from address bar"}};
+}
+
+function route(){
+  var id=location.hash.slice(1), m=FIX.filter(function(x){return x.id===id})[0];
+  document.getElementById("list").classList.toggle("hidden",!!m);
+  document.getElementById("match").classList.toggle("hidden",!m);
+  if(m){renderMatch(m);document.title=m.h+" v "+m.a+" prediction – MatchIQ";window.scrollTo(0,0)}
+  else document.title="MatchIQ – Today's football matches, goals and score predictions";
+}
+function ymd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+fetch("/api/fixtures?date="+ymd(now)).then(function(r){return r.json()}).then(function(d){
+  if(d.error){document.getElementById("rows").innerHTML='<p class="lede">Matches are not available right now. Check back soon.</p>';return}
+  FIX=d.fixtures.filter(function(m){return m.hF!==null&&m.aF!==null}).map(function(m){m.time=new Date(m.utc).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});return m});
+  if(!FIX.length)document.getElementById("rows").innerHTML='<p class="lede">No matches with enough data today. Check back tomorrow.</p>';
+  renderList();route();
+}).catch(function(){document.getElementById("rows").innerHTML='<p class="lede">Could not load matches. Refresh to try again.</p>'});
+window.addEventListener("hashchange",route);
+</script>
+</body>
+</html>

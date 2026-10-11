@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>MatchIQ admin</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;background:#f2f4f7;color:#14213d;margin:0}main{max-width:420px;margin:8vh auto;padding:0 16px}
+.c{background:#fff;border:1px solid #d9dee7;border-radius:12px;padding:20px}input,button{width:100%;padding:12px;margin:6px 0 12px;border-radius:8px;border:1px solid #b9c1d0;font:inherit}
+button{background:#14213d;color:#fff;border:0;font-weight:600;cursor:pointer}.m{font-size:14px;min-height:20px}.e{color:#b3261e}.k{color:#1b6e3c}.hidden{display:none}h1{margin:0 0 14px;font-size:22px}</style></head><body><main>
+<div class="c" id="login"><h1>MatchIQ admin</h1><label>Username<input id="u" autocomplete="username"></label><label>Password<input id="p" type="password" autocomplete="current-password"></label>
+<button id="lb">Log in</button><div class="m" id="lm"></div></div>
+<div class="c hidden" id="panel"><h1>Fixtures token</h1><div class="m" id="st"></div>
+<label>football-data.org API token<input id="t" type="password" autocomplete="off" placeholder="Paste token"></label>
+<button id="sb">Save token</button><div class="m" id="sm"></div><button id="out" style="background:#5b6679">Log out</button></div>
+</main><script>
+const $=i=>document.getElementById(i);
+async function api(path,body){const r=await fetch(path,body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{});return{ok:r.ok,d:await r.json().catch(()=>({}))}}
+async function show(){const r=await api('/api/admin/status');if(!r.ok){$('login').classList.remove('hidden');$('panel').classList.add('hidden');return}
+$('login').classList.add('hidden');$('panel').classList.remove('hidden');$('st').textContent=r.d.set?'A token is saved (ends '+r.d.hint+'). Paste a new one to replace it.':'No token saved yet. Visitors will see no fixtures until you add one.'}
+$('lb').onclick=async()=>{const r=await api('/api/admin/login',{username:$('u').value,password:$('p').value});$('lm').className='m e';$('lm').textContent=r.ok?'':(r.d.error||'Login failed.');if(r.ok){$('p').value='';show()}};
+$('sb').onclick=async()=>{$('sm').className='m';$('sm').textContent='Checking token…';const r=await api('/api/admin/token',{token:$('t').value});$('sm').className='m '+(r.ok?'k':'e');$('sm').textContent=r.ok?'Saved. The site is live with this token.':r.d.error;if(r.ok){$('t').value='';show()}};
+$('out').onclick=async()=>{await api('/api/admin/logout',{});show()};show();
+</script></body></html>

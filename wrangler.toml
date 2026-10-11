@@ -1,0 +1,11 @@
+name = "matchiq"
+main = "src/worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+ADMIN_USER = "admin"
+
+# Run: npx wrangler kv namespace create MATCHIQ   then paste the id below
+[[kv_namespaces]]
+binding = "KV"
+id = "PASTE_KV_ID_HERE"
