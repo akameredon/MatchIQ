@@ -8,4 +8,4 @@ ADMIN_USER = "admin"
 # Run: npx wrangler kv namespace create MATCHIQ   then paste the id below
 [[kv_namespaces]]
 binding = "KV"
-id = " c37f0fa75d084b9d8f512dd4fe57bd7c"
+id = "c37f0fa75d084b9d8f512dd4fe57bd7c"
